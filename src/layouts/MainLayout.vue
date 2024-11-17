@@ -110,6 +110,12 @@ const linksList = [
     path: '/projects'
   },
   {
+    title: 'Subscription',
+    caption: '',
+    icon: 'print',
+    path: '/subscriptions'
+  },
+  {
     title: 'Logout',
     caption: '',
     icon: 'logout',

@@ -15,7 +15,7 @@ const routes = [
     component: () => import("pages/SubscriptionPage.vue"),
   },
   {
-    path: "/dashboard",
+    path: "/",
     component: () => import("layouts/MainLayout.vue"),
     children: [
       {
@@ -37,6 +37,11 @@ const routes = [
         path: "/projects",
         meta: { requiresAuth: true },
         component: () => import("pages/ProjectList.vue"),
+      },
+      {
+        path: "/subscriptions",
+        meta: { requiresAuth: true },
+        component: () => import("pages/SubscriptionView.vue"),
       },
     ],
   },

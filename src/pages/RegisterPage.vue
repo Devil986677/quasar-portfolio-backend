@@ -41,7 +41,7 @@ const handleSubmit = async (e) => {
       email: email.value,
       password: password.value,
       name: name.value,
-      password_confirmation:passwordConfirmation.value,
+      password_confirmation: passwordConfirmation.value,
 
     });
     console.log(response);
@@ -55,7 +55,7 @@ const handleSubmit = async (e) => {
       email.value = '';
       password.value = '';
       name.value = '',
-      passwordConfirmation.value='',
+        passwordConfirmation.value = '',
 
         // Redirect to the home page
         router.push({ path: '/dashboard' });
