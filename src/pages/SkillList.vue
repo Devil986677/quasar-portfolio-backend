@@ -120,6 +120,7 @@ const api = axios.create({
 });
 export default {
   setup() {
+    const token = localStorage.getItem("token");
     const router = useRouter();
     const rows = ref([])
     const isViewDialogOpen = ref(false);
@@ -130,9 +131,6 @@ export default {
       page: 1,
       rowsPerPage: 10,
     });
-    const name = ref('')
-    const type = ref('')
-    const image = ref('')
 
     const columns = [
       { name: 'index', label: 'Index', align: 'left', field: 'index', sortable: true },
@@ -169,17 +167,17 @@ export default {
 
     const saveEdit = async () => {
       try {
-        // Prepare data with only values
         const updatedData = {
           name: selectedItem.value.name,
           type: selectedItem.value.type,
-
-
         };
+        await api.put(`/api/skills/${selectedItem.value.id}`, updatedData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-        await api.put(`/api/skills/${selectedItem.value.id}`, updatedData);
-
-        // Update the local data
         const index = rows.value.findIndex((row) => row.id === selectedItem.value.id);
         if (index !== -1) {
           rows.value[index] = { ...selectedItem.value };
@@ -194,32 +192,6 @@ export default {
         isEditDialogOpen.value = false;
       }
     };
-
-
-    // const saveEdit = async () => {
-    //   try {
-    //     const updatedData = new FormData();
-    //     updatedData.append('name', selectedItem.value.name);
-    //     updatedData.append('type', selectedItem.value.type);
-
-    //     if (selectedItem.value.image) {
-    //       // Ensure this is a File object or Blob before appending
-    //       updatedData.append('images', selectedItem.value.image);
-    //     }
-
-    //     await api.put(`/api/skills/${selectedItem.value.id}`, updatedData, {
-    //       headers: {
-    //         'Accept': 'application/json',
-    //       },
-    //     });
-    //   } catch (error) {
-    //     console.error('Error saving item:', error);
-    //   }
-    // };
-
-
-
-
     const addSkill = () => {
 
       router.push({ path: '/add/skills' });
@@ -228,17 +200,42 @@ export default {
     const isDeletedDialogOpen = ref(false)
     const itemToDelete = ref(null)
 
-    // Fetch data function
+
     const fetchData = async () => {
       try {
-        const response = await api.get('/api/skills')
-        rows.value = response.data.data.map((item, index) => ({
-          ...item, index: index + 1
-        }))
+        // Step 1: Get the token from localStorage
+
+        if (!token) {
+          console.error("User not authenticated: Token missing.");
+          return;
+        }
+
+        // Step 2: Fetch logged-in user details
+        const userResponse = await api.get('/api/user', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const loggedInUserId = userResponse.data.id;
+
+
+        const response = await api.get('/api/skills', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        rows.value = response.data.data
+          .filter(item => item.created_by === loggedInUserId)
+          .map((item, index) => ({
+            ...item,
+            index: index + 1,
+          }));
       } catch (error) {
-        console.error('Error while fetching data: ', error)
+        console.error('Error while fetching data: ', error);
       }
-    }
+    };
+
 
     const confirmDelete = (row) => {
       itemToDelete.value = row
@@ -248,7 +245,11 @@ export default {
     const deleteConfirmed = async () => {
       try {
         if (itemToDelete.value) {
-          await api.delete(`/api/skills/${itemToDelete.value.id}`)
+          await api.delete(`/api/skills/${itemToDelete.value.id}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
 
 
           rows.value = rows.value.filter(item => item.id !== itemToDelete.value.id)
@@ -278,10 +279,26 @@ export default {
     // Save the skill, including the image
     const saveSkill = async () => {
       try {
+        // Step 1: Get the token from localStorage
+        const token = localStorage.getItem("token");
+        if (!token) {
+          console.error("User not authenticated: Token missing.");
+          return;
+        }
+
+        // Step 2: Get the user details using the /user API
+        const userResponse = await axios.get("http://127.0.0.1:8000/api/user", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const userId = userResponse.data.id;
 
         const formData = new FormData();
         formData.append('name', selectedItem.value.name);
         formData.append('type', selectedItem.value.type);
+        formData.append("created_by", userId);
 
 
         if (selectedItem.value.image) {
@@ -292,6 +309,7 @@ export default {
         await api.post('/api/skills', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${token}`,
           },
         });
 

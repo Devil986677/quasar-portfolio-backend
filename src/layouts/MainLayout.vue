@@ -116,6 +116,12 @@ const linksList = [
     path: '/subscriptions'
   },
   {
+    title: 'Subscription plans',
+    caption: '',
+    icon: 'print',
+    path: '/'
+  },
+  {
     title: 'Logout',
     caption: '',
     icon: 'logout',

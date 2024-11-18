@@ -49,18 +49,43 @@ const api = axios.create({
 
 export default {
   setup() {
+    const token = localStorage.getItem("token");
     const data = ref('')
+
     const fetchData = async () => {
       try {
-        const response = await api.get('api/count')
-        data.value = response.data
-        console.log(response.data.count);
-      } catch (error) {
-        console.error('Error while fetching data: ', error)
-      }
-    }
+        if (!token) {
+          console.error("User not authenticated: Token missing.");
+          return;
+        }
 
-    // Call fetchData when the component is mounted
+      
+        const userResponse = await api.get('/api/user', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const loggedInUserId = userResponse.data.id;
+
+
+        const response = await api.get('/api/count', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          params: { id: loggedInUserId }
+        });
+
+        data.value = response.data;
+
+
+      } catch (error) {
+        console.error('Error while fetching data: ', error);
+      }
+    };
+
+
+
     onMounted(() => {
       fetchData();
     });

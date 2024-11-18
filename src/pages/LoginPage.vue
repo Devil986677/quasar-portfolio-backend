@@ -14,12 +14,24 @@ const password = ref('');
 const message = ref('');
 const success = ref(false);
 const showPassword = ref(false);
+const error = ref('');
+const recaptchaSiteKey = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
 
+const script = document.createElement('script');
 onMounted(() => {
   const token = localStorage.getItem('token');
   if (token) {
     router.push({ path: '/dashboard' });
   }
+
+
+  const script = document.createElement('script');
+  script.src = 'https://www.google.com/recaptcha/api.js';
+  script.async = true;
+  script.onload = () => {
+    console.log('reCAPTCHA script loaded');
+  };
+  document.head.appendChild(script);
 });
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
@@ -29,9 +41,16 @@ const handleSubmit = async (e) => {
   e.preventDefault();
 
   try {
+    const recaptchaResponse = document.querySelector('#g-recaptcha-response').value;
+
+    if (!recaptchaResponse) {
+      error.value = 'Please complete the reCAPTCHA.';
+      return;
+    }
     const response = await api.post('api/login', {
       email: email.value,
       password: password.value,
+      'g-recaptcha-response': recaptchaResponse,
     });
     console.log(response);
 
@@ -65,7 +84,7 @@ const handleSubmit = async (e) => {
   <q-layout view="hHh lpR fFf">
     <q-page-container>
       <q-page class="flex flex-center">
-        <q-card class="q-pa-md" style="width: 300px;">
+        <q-card class="q-pa-md" style="width: 350px;">
           <q-card-section>
             <div class="text-h6 text-center">Login</div>
           </q-card-section>
@@ -80,7 +99,11 @@ const handleSubmit = async (e) => {
                   <q-icon :name="showPassword ? 'visibility_off' : 'visibility'" @click="togglePasswordVisibility"
                     class="cursor-pointer" />
                 </template>
+
               </q-input>
+              <!-- Google reCAPTCHA -->
+              <div class="g-recaptcha" :data-sitekey="recaptchaSiteKey"></div>
+              <div v-if="error" style="color: red;">{{ error }}</div>
               <q-btn label="Login" color="primary" type="submit" class="full-width" />
             </q-form>
             <router-link :to="{ name: 'register' }" class="q-pt-md">

@@ -120,7 +120,7 @@ const api = axios.create({
 });
 export default {
   setup() {
-    const router = useRouter();
+    const token = localStorage.getItem("token");
     const rows = ref([])
     const isViewDialogOpen = ref(false);
     const selectedItem = ref({});
@@ -130,10 +130,6 @@ export default {
       page: 1,
       rowsPerPage: 10,
     });
-    // const name = ref('')
-    // const type = ref('')
-    // const image = ref('')
-
     const columns = [
       { name: 'index', label: 'Index', align: 'left', field: 'index', sortable: true },
       { name: 'name', label: 'Name', align: 'left', field: 'name', sortable: true },
@@ -180,7 +176,11 @@ export default {
           support_type: selectedItem.value.support_type,
         };
 
-        await api.put(`/api/plans/${selectedItem.value.id}`, updatedData);
+        await api.put(`/api/plans/${selectedItem.value.id}`, updatedData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         // Update the local data
         const index = rows.value.findIndex((row) => row.id === selectedItem.value.id);
@@ -207,7 +207,12 @@ export default {
     // Fetch data function
     const fetchData = async () => {
       try {
-        const response = await api.get('/api/plans')
+        const response = await api.get('/api/plans', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
         rows.value = response.data.data.map((item, index) => ({
           ...item, index: index + 1
         }))
@@ -224,7 +229,12 @@ export default {
     const deleteConfirmed = async () => {
       try {
         if (itemToDelete.value) {
-          await api.delete(`/api/plans/${itemToDelete.value.id}`)
+          await api.delete(`/api/plans/${itemToDelete.value.id}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
 
 
           rows.value = rows.value.filter(item => item.id !== itemToDelete.value.id)
@@ -267,7 +277,12 @@ export default {
 
 
 
-        await api.post('/api/plans', formData);
+        await api.post('/api/plans', formData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
 
 
         isAddDialogOpen.value = false;

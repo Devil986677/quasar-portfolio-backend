@@ -13,7 +13,7 @@
 
         <!-- Payment Button -->
         <button class="tw-bg-green-500 tw-text-white tw-px-4 tw-py-2 tw-mt-6 tw-rounded-full tw-font-medium"
-          @click=" plan.price != 0 ? openEsewaDialog(plan.price) : redirectToLogin()">
+          @click=" plan.price != 0 ? openEsewaDialog(plan.price, plan.id) : redirectToLogin()">
           <div>{{ plan.price == 0 ? 'Get started' : 'Buy now' }}</div>
 
         </button>
@@ -33,7 +33,7 @@
           <!-- Payment Image -->
           <q-img :src="EsewaImage" spinner-color="white"
             style="width: 100%; height: auto; max-height: 140px; object-fit: contain; cursor: pointer;"
-            @click="handleEsewaClick(selectedPrice)" />
+            @click="handleEsewaClick(selectedPrice, selectedId)" />
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="Close" color="primary" v-close-popup></q-btn>
@@ -49,15 +49,21 @@ import axios from "axios";
 
 export default {
   setup() {
+    const token = localStorage.getItem("token");
     const subscriptions = ref([]);
     const esewaDialog = ref(false); // Dialog visibility
     const selectedPrice = ref(0);
+    const selectedId = ref('');
     const EsewaImage = "images/esewa.jpg";
 
     // Fetch subscription plans
     const fetchData = async () => {
       try {
-        const response = await axios.get("http://127.0.0.1:8000/api/plans");
+        const response = await axios.get("http://127.0.0.1:8000/api/plans", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         subscriptions.value = response.data.data;
       } catch (error) {
         console.error("Error fetching plans:", error.response?.data || error.message);
@@ -65,31 +71,81 @@ export default {
     };
 
     // Open eSewa dialog and set selected price
-    const openEsewaDialog = (price) => {
+    const openEsewaDialog = (price, id) => {
       selectedPrice.value = price;
+      selectedId.value = id;
       esewaDialog.value = true;
     };
 
     //redirect to login page
     const redirectToLogin = () => {
-      console.log('helle')
+     
       window.location.href = '/';
     };
 
 
 
     // Handle eSewa payment click
-    const handleEsewaClick = async (amount) => {
-      const payload = {
-        cost: amount,
-        product_code: "EPAYTEST",
-        su: "http://127.0.0.1:8000/api/payment",
-        fu: "https://google.com",
-        application_id: 321,
-      };
+    // const handleEsewaClick = async (amount) => {
+    //   const payload = {
+    //     cost: amount,
+    //     product_code: "EPAYTEST",
+    //     su: "http://127.0.0.1:8000/api/payment",
+    //     fu: "https://google.com",
+    //     application_id: 321,
+    //   };
 
+    //   try {
+    //     const response = await axios.post("http://127.0.0.1:8000/api/esewa/payment", payload);
+    //     if (response.data.redirect_url) {
+    //       esewaDialog.value = false;
+    //       window.open(response.data.redirect_url, "_blank");
+    //     } else {
+    //       console.error("Payment initiation failed:", response.data);
+    //     }
+    //   } catch (error) {
+    //     console.error("Error during payment:", error.response?.data || error.message);
+    //   }
+    // };
+
+
+    const handleEsewaClick = async (amount, id) => {
       try {
-        const response = await axios.post("http://127.0.0.1:8000/api/esewa/payment", payload);
+        // Step 1: Get the token from localStorage
+        const token = localStorage.getItem("token");
+        if (!token) {
+          console.error("User not authenticated: Token missing.");
+          return;
+        }
+
+        // Step 2: Get the user details using the /user API
+        const userResponse = await axios.get("http://127.0.0.1:8000/api/user", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const userId = userResponse.data.id;
+        console.log(userId);
+
+        const payload = {
+          productId: id,
+          user_id: userId,
+          cost: amount,
+          product_code: "EPAYTEST",
+          su: "http://localhost:9001/#/success",
+          fu: "https://google.com",
+          application_id: 321,
+        };
+
+
+        const response = await axios.post("http://127.0.0.1:8000/api/esewa/payment", payload, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        // Step 5: Handle the payment response
         if (response.data.redirect_url) {
           esewaDialog.value = false;
           window.open(response.data.redirect_url, "_blank");
@@ -109,6 +165,7 @@ export default {
       esewaDialog,
       EsewaImage,
       selectedPrice,
+      selectedId,
       openEsewaDialog,
       handleEsewaClick,
       redirectToLogin,

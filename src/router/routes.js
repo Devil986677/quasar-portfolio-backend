@@ -10,11 +10,6 @@ const routes = [
     component: () => import("pages/RegisterPage.vue"),
   },
   {
-    name: "subscription",
-    path: "/subscription",
-    component: () => import("pages/SubscriptionPage.vue"),
-  },
-  {
     path: "/",
     component: () => import("layouts/MainLayout.vue"),
     children: [
@@ -42,6 +37,18 @@ const routes = [
         path: "/subscriptions",
         meta: { requiresAuth: true },
         component: () => import("pages/SubscriptionView.vue"),
+      },
+      {
+        name: "subscription",
+        path: "/",
+        meta: { requiresAuth: true },
+        component: () => import("pages/SubscriptionPage.vue"),
+      },
+      {
+        name: "paymentSucess",
+        path: "/success",
+        meta: { requiresAuth: true },
+        component: () => import("pages/SuccessPage.vue"),
       },
     ],
   },

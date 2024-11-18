@@ -104,6 +104,7 @@ const api = axios.create({
 
 export default {
   setup() {
+    const token = localStorage.getItem("token");
     const rows = ref([]);
     const isViewDialogOpen = ref(false);
     const selectedItem = ref({});
@@ -150,7 +151,12 @@ export default {
 
         };
 
-        await api.put(`/api/contact/${selectedItem.value.id}`, updatedData);
+        await api.put(`/api/contact/${selectedItem.value.id}`, updatedData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
 
         // Update the local data
         const index = rows.value.findIndex((row) => row.id === selectedItem.value.id);
@@ -169,7 +175,11 @@ export default {
 
     const fetchData = async () => {
       try {
-        const response = await api.get('/api/contact');
+        const response = await api.get('/api/contact', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         rows.value = response.data.data.map((item, index) => ({
           ...item,
           index: index + 1,
